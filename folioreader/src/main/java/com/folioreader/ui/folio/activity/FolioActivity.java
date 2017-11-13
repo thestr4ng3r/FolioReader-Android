@@ -28,6 +28,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
@@ -74,8 +75,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static android.view.View.GONE;
-import static com.folioreader.Constants.BOOK_TITLE;
 import static com.folioreader.Constants.CHAPTER_SELECTED;
 import static com.folioreader.Constants.HIGHLIGHT_SELECTED;
 import static com.folioreader.Constants.SELECTED_CHAPTER_POSITION;
@@ -87,6 +86,8 @@ public class FolioActivity
         ObservableWebView.ToolBarListener,
         ConfigBottomSheetDialogFragment.ConfigDialogCallback,
         MainMvpView {
+
+    private static final String TAG = "FolioActivity";
 
     public static final String INTENT_EPUB_SOURCE_PATH = "com.folioreader.epub_asset_path";
     public static final String INTENT_EPUB_SOURCE_TYPE = "epub_source_type";
@@ -160,7 +161,7 @@ public class FolioActivity
 
 
         if (ContextCompat.checkSelfPermission(FolioActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(FolioActivity.this, Constants.WRITE_EXTERNAL_STORAGE_PERMS, Constants.WRITE_EXTERNAL_STORAGE_REQUEST);
+            ActivityCompat.requestPermissions(FolioActivity.this, Constants.getWriteExternalStoragePerms(), Constants.WRITE_EXTERNAL_STORAGE_REQUEST);
         } else {
             setupBook();
         }
@@ -218,7 +219,7 @@ public class FolioActivity
             new MainPresenter(this).parseManifest(urlString);
 
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, "initBook failed", e);
         }
     }
 
@@ -393,7 +394,7 @@ public class FolioActivity
                     if (selectedChapterHref.contains(spine.href)) {
                         mChapterPosition = mSpineReferenceList.indexOf(spine);
                         mFolioPageViewPager.setCurrentItem(mChapterPosition);
-                        title.setText(data.getStringExtra(BOOK_TITLE));
+                        title.setText(data.getStringExtra(Constants.BOOK_TITLE));
                         BUS.post(new AnchorIdEvent(selectedChapterHref));
                         break;
                     }
@@ -488,7 +489,7 @@ public class FolioActivity
 
         setupColors(mContext);
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            findViewById(R.id.playback_speed_Layout).setVisibility(GONE);
+            findViewById(R.id.playback_speed_Layout).setVisibility(View.GONE);
         }
 
         shade.setOnClickListener(new View.OnClickListener() {
