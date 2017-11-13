@@ -11,7 +11,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.webkit.WebView;
 
-import com.folioreader.ui.folio.activity.FolioActivity;
 import com.folioreader.ui.folio.fragment.FolioPageFragment;
 
 /**
@@ -19,8 +18,6 @@ import com.folioreader.ui.folio.fragment.FolioPageFragment;
  */
 public class ObservableWebView extends WebView {
 
-    private FolioPageFragment mFolioPageFragment;
-    private FolioPageFragment.FolioPageFragmentCallback mActivityCallback;
     private float mDownPosX = 0;
     private float mDownPosY = 0;
 
@@ -28,7 +25,18 @@ public class ObservableWebView extends WebView {
         void onScrollChange(int percent);
     }
 
+    public interface SeekBarListener {
+        void fadeInSeekBarIfInvisible();
+    }
+
+    public interface ToolBarListener {
+        void hideOrshowToolBar();
+        void hideToolBarIfVisible();
+    }
+
     private ScrollListener mScrollListener;
+    private SeekBarListener mSeekBarListener;
+    private ToolBarListener mToolBarListener;
 
     public ObservableWebView(Context context) {
         super(context);
@@ -52,10 +60,16 @@ public class ObservableWebView extends WebView {
         mScrollListener = listener;
     }
 
+    public void setSeekBarListener(SeekBarListener listener) {
+        mSeekBarListener = listener;
+    }
+
+    public void setToolBarListener(ToolBarListener listener) {
+        mToolBarListener = listener;
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        mActivityCallback = (FolioActivity) getContext();
-
         final int action = event.getAction();
         float MOVE_THRESHOLD_DP = 20 * getResources().getDisplayMetrics().density;
 
@@ -63,12 +77,12 @@ public class ObservableWebView extends WebView {
             case MotionEvent.ACTION_DOWN:
                 mDownPosX = event.getX();
                 mDownPosY = event.getY();
-                mFolioPageFragment.fadeInSeekBarIfInvisible();
+                if (mSeekBarListener != null) mSeekBarListener.fadeInSeekBarIfInvisible();
                 break;
             case MotionEvent.ACTION_UP:
                 if (Math.abs(event.getX() - mDownPosX) < MOVE_THRESHOLD_DP
                         || Math.abs(event.getY() - mDownPosY) < MOVE_THRESHOLD_DP) {
-                    mActivityCallback.hideOrshowToolBar();
+                    if(mToolBarListener != null) mToolBarListener.hideOrshowToolBar();
                 }
                 break;
         }
@@ -77,8 +91,7 @@ public class ObservableWebView extends WebView {
 
     @Override
     protected void onScrollChanged(int l, int t, int oldl, int oldt) {
-        mActivityCallback = (FolioActivity) getContext();
-        mActivityCallback.hideToolBarIfVisible();
+        if (mToolBarListener != null) mToolBarListener.hideToolBarIfVisible();
         if (mScrollListener != null) mScrollListener.onScrollChange(t);
         super.onScrollChanged(l, t, oldl, oldt);
     }
@@ -156,9 +169,5 @@ public class ObservableWebView extends WebView {
                 return null;
             }
         };
-    }
-
-    public void setFragment(FolioPageFragment folioPageFragment) {
-        mFolioPageFragment = folioPageFragment;
     }
 }
